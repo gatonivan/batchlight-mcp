@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv
+
+# Lua 5.1 test toolchain (built locally with hererocks)
+.lua51/
+
+# Adobe Lightroom Classic SDK docs: Adobe's terms forbid redistributing them
+docs/vendor/
+
+# Local secrets and OS clutter
+.env
+.DS_Store
