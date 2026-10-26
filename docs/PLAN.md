@@ -177,8 +177,9 @@ Neither guide's code runs as written. Every claim is tracked here so nothing shi
 | D22 | Face names are separate from keywords | ❌ | Named faces become **person keywords**, so sharing keywords would leak people names even with `share_people` off. |
 | D18 | Timed-out commands are simply abandoned | ❌ | They stay queued and run later. A stale "apply" would fire the next time Lightroom opens. Commands need an expiry. |
 | D19 | Bundle the Adobe SDK docs in `docs/` | ❌ | Adobe's terms treat the docs as part of the SDK and restrict redistributing them. Keep `docs/vendor/` gitignored; the README links to Adobe's download. |
-| D23 | *(found locally, not from the guides)* Adobe ships adaptive presets that already carry skin masks | ✅ in Lightroom 9.6 · ⏳ in LrC | The cloud app on the dev Mac has `Settings/Premium/Adaptive - Portrait/` with 12 presets. One is **Adaptive - Smooth Facial Skin** (UUID `798869B7B7234F0EBF221B90067B07FF`: facial-skin mask, Texture −0.2, Clarity −0.1), and *Polished Portrait* adds a body-skin mask. A people-part mask is `crs:What="Mask/Image"` with `MaskSubType="3"` and `MaskSubCategoryID` set to 2 facial skin · 3 iris/pupil · 4 body skin · 5 hair · 6 lips · 7 facial hair · 8 sclera · 9 eyebrows · 11 clothes · 12 teeth. **Verify in M1** that LrC ships the same files and UUIDs, and that `applyDevelopPreset` plus `updateAISettings` computes them. Our own presets reuse the structure with our own values and UUIDs; Adobe's files are read for format only and never copied into the repo. |
+| D23 | *(found locally, not from the guides)* Adobe ships adaptive presets that already carry skin masks | ✅ in Lightroom 9.6 and LrC 15.6 (same UUIDs, checked 2026-10-26); applying them from the plugin ⏳ M4 | The cloud app on the dev Mac has `Settings/Premium/Adaptive - Portrait/` with 12 presets. One is **Adaptive - Smooth Facial Skin** (UUID `798869B7B7234F0EBF221B90067B07FF`: facial-skin mask, Texture −0.2, Clarity −0.1), and *Polished Portrait* adds a body-skin mask. A people-part mask is `crs:What="Mask/Image"` with `MaskSubType="3"` and `MaskSubCategoryID` set to 2 facial skin · 3 iris/pupil · 4 body skin · 5 hair · 6 lips · 7 facial hair · 8 sclera · 9 eyebrows · 11 clothes · 12 teeth. **Verify in M1** that LrC ships the same files and UUIDs, and that `applyDevelopPreset` plus `updateAISettings` computes them. Our own presets reuse the structure with our own values and UUIDs; Adobe's files are read for format only and never copied into the repo. |
 | D20 | MediaPipe for face landmarks | ❌ | Python 3.13 wheels exist (Apache-2.0), but **Google's privacy notice says MediaPipe Tasks send usage metrics to Google**, with no documented opt-out. Excluded. Use OpenCV + the YuNet face detector (Apache-2.0 / MIT) instead. |
+| D24 | *(found locally)* `LrForceInitPlugin = true` runs `LrInitPlugin` at launch | ⚠️ in LrC 15.6 (checked 2026-10-26) | Only plug-ins that declare menu items get it. The flag is read in one place, `Library.lrmodule/.../AgSdkMenus.lua`, which activates the plug-in while adding its `LrExportMenuItems`/`LrLibraryMenuItems`/`LrHelpMenuItems`. Our first build had no menu item, so `Init.lua` never ran and nothing was logged. Fix: a **File ▸ Plug-in Extras ▸ BatchLight Status...** item. The loader (`AgSdkPlugin.lua`) accepts an SDK version when 1.3 ≤ v ≤ the app's version (15.6), and only one of `LrSdkVersion`/`LrSdkMinimumVersion` needs to pass. |
 
 ---
 
@@ -285,7 +286,7 @@ Each AI client starts its own server process: Claude Desktop, Claude Code, the d
 
 ### Plugin
 - **Lifecycle:**
-  - `LrForceInitPlugin`, so the bridge starts with Lightroom.
+  - `LrForceInitPlugin` plus a menu item (D24), so the bridge starts with Lightroom.
   - One worker started with `postAsyncTaskWithContext` (a plain `startAsyncTask` from init was seen being cancelled).
   - **Fast lane.** Read-only status actions (ping, hello, status) are answered directly in the poll loop and never queued behind a running batch, so "is it connected?" never looks like "it's broken."
   - A **run flag plus a generation token stored in plugin prefs**. After a *Reload*, the old loop sees it's been superseded and exits. Without this, reloads leave duplicate loops running.
@@ -354,14 +355,14 @@ Each AI client starts its own server process: Claude Desktop, Claude Code, the d
 │   ├── server.py        MCPServer, lifespan, tool registration
 │   ├── tools/           status · photos · develop · inspect · recipes
 │   ├── bridge/          hub (HTTP) · relay · protocol (envelope, expiry, idempotency) · discovery (file + lock) · journal
-│   ├── contract.json    bridge contract: messages, actions, error codes, examples (also read by the Lua tests)
 │   ├── policy.py        privacy filter
 │   ├── analysis.py      color statistics (Pillow only)
 │   ├── params.py        develop-parameter catalog: validate, clamp, map
 │   ├── data/            develop_params.json · recipes/**/*.json · presets/*.xmp (our own adaptive presets)
 │   └── plugin/BatchLight.lrplugin/
 │         Info.lua · Init.lua · Shutdown.lua · ShutdownApp.lua
-│         Bridge.lua (poll loop) · Handlers.lua · Protocol.lua (pure) · dkjson.lua
+│         Bridge.lua (poll loop shell) · Core.lua (pure decisions) · Handlers.lua · Log.lua · dkjson.lua
+│         contract.json   bridge contract, read at runtime by both Python and Lua (and by both test suites)
 └── tests/           python/ · lua/ (busted, pure modules only)
 ```
 - **The plugin lives inside the Python package** so it ships in the wheel for `install-plugin`. During development, Plug-in Manager points straight at this folder, so a Lua edit plus *Reload* takes effect immediately.

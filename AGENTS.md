@@ -4,16 +4,18 @@ BatchLight is an MCP server (Python) plus a Lightroom Classic plugin (Lua 5.1) t
 
 **The plan of record is [docs/PLAN.md](docs/PLAN.md).** Read it before substantive work. Its decisions table and plan review log override anything a tutorial, snippet or older note says.
 
-**Status:** M0, repo setup. The server entry point is a stub, and the plugin, bridge and tests start in M1.
+**Status:** M1 in progress. The bridge, plugin loop, `lightroom_status` and `probe` exist and are tested against a fake plugin; the real-Lightroom check is next.
 
 ## Commands
 | What | Command |
 |---|---|
 | Set up the Python environment | `uv sync` |
-| Run the server (stub until M1) | `uv run batchlight-mcp` |
-| Lua tests | `.lua51/bin/busted tests/lua` |
+| Run the server (stdio) | `uv run batchlight-mcp` |
+| Python tests | `uv run pytest` |
+| Talk to the plugin directly | `uv run batchlight-mcp probe status` (or `ping`, `hub-status`) |
+| Lua tests | `.lua51/bin/busted` (config in `.busted`) |
 | Lua 5.1 syntax check | `.lua51/bin/luac -p <file.lua>` |
-| Lua lint | `.lua51/bin/luacheck --std lua51 <dir>` |
+| Lua lint | `.lua51/bin/luacheck .` (config in `.luacheckrc`) |
 
 `.lua51/` is gitignored. To rebuild it, run `uvx hererocks .lua51 --lua 5.1 --luarocks latest`, then `.lua51/bin/luarocks install busted` and `.lua51/bin/luarocks install luacheck`.
 
@@ -46,7 +48,7 @@ BatchLight is an MCP server (Python) plus a Lightroom Classic plugin (Lua 5.1) t
 9. **Commits** use conventional commits, with an imperative subject under 72 characters. **No AI attribution anywhere:** no `Co-Authored-By` trailers or "Generated with" lines in commits, PRs, code or docs.
 
 ## Bridge contract
-The Python–Lua bridge contract will live in `src/batchlight_mcp/contract.json` (M1). It holds the messages, actions, error codes, protocol version and example messages. Link to it; never restate it here or in code comments.
+The Python–Lua bridge contract is `src/batchlight_mcp/plugin/BatchLight.lrplugin/contract.json`. It sits inside the plugin folder so both sides read the same file at runtime. It holds the messages, actions, error codes, protocol version and example messages. Link to it; never restate it here or in code comments.
 
 ## New capability checklist
 1. Add the action and its error codes to `contract.json`, with an example message.
