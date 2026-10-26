@@ -1,0 +1,69 @@
+{
+  "protocol": 1,
+  "poll_hold_seconds": 25,
+  "max_body_bytes": 8388608,
+  "actions": {
+    "ping": {
+      "lane": "fast",
+      "access": "none",
+      "description": "Round trip that touches nothing in Lightroom."
+    },
+    "status": {
+      "lane": "fast",
+      "access": "read",
+      "description": "Lightroom version, current module and number of selected photos."
+    }
+  },
+  "errors": {
+    "plugin_not_connected": "The BatchLight plugin is not connected. Make sure Lightroom Classic is open and that BatchLight is installed and enabled in File > Plug-in Manager, then call lightroom_status again.",
+    "protocol_mismatch": "The Lightroom plugin speaks bridge protocol {plugin_protocol} but this server speaks {server_protocol}. Reinstall the plugin from this server version (batchlight-mcp install-plugin), then reload it in Plug-in Manager.",
+    "timeout": "Lightroom did not answer '{action}' within {seconds} seconds. It may be busy (for example exporting or showing a dialog). If this was an edit it may still have been applied, so check with get_develop_settings before retrying.",
+    "expired": "The '{action}' command waited too long to start and was cancelled before Lightroom ran it. Nothing was changed. Try again.",
+    "unknown_action": "This Lightroom plugin does not know the action '{action}'. The plugin and server versions probably differ; reinstall the plugin and reload it in Plug-in Manager.",
+    "bad_request": "The Lightroom plugin rejected a malformed '{action}' command. This is a bug in BatchLight; details are in the local log.",
+    "handler_failed": "Lightroom reported an error while running '{action}'. Details are in the local log (never sent to the AI).",
+    "hub_unavailable": "Could not reach or start the BatchLight bridge on this computer. Restart your AI client; if it keeps happening, check the local log.",
+    "hub_changed": "The BatchLight bridge restarted while '{action}' was in flight. It is safe to call the same tool again.",
+    "internal_error": "BatchLight hit an internal error. Details are in the local log (never sent to the AI)."
+  },
+  "examples": {
+    "hello": {
+      "generation": 7,
+      "protocol": 1,
+      "plugin_version": "0.1.0",
+      "lightroom_version": "15.6"
+    },
+    "hello_reply": {
+      "protocol": 1,
+      "server_version": "0.1.0"
+    },
+    "command": {
+      "id": "8f14e45fceea167a5a36dedd4bea2543",
+      "action": "status",
+      "params": {},
+      "expires_at": 1793000000.5,
+      "protocol": 1
+    },
+    "result_ok": {
+      "id": "8f14e45fceea167a5a36dedd4bea2543",
+      "generation": 7,
+      "ok": true,
+      "result": {
+        "lightroom_version": "15.6",
+        "module": "library",
+        "selected_photos": 3
+      }
+    },
+    "result_error": {
+      "id": "8f14e45fceea167a5a36dedd4bea2543",
+      "generation": 7,
+      "ok": false,
+      "error": {
+        "code": "handler_failed",
+        "params": {
+          "action": "status"
+        }
+      }
+    }
+  }
+}
